@@ -1,5 +1,7 @@
+#!/usr/bin/env node
+
 function main(): void {
-	console.log("task-cli");
+	console.log(process.argv);
 }
 
 main();
