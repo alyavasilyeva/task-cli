@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { addTask } from "./commands/add.js";
+import { deleteTask } from "./commands/delete.js";
 import { TaskNotFoundError, updateTask } from "./commands/update.js";
 import { getPositionalArgs } from "./parse-args.js";
 
@@ -49,6 +50,35 @@ async function main(): Promise<void> {
 			try {
 				const task = await updateTask(id, description);
 				console.log(`Task updated: ${task.id}`);
+			} catch (error) {
+				if (error instanceof TaskNotFoundError) {
+					console.error(`Error: ${error.message}`);
+					process.exit(1);
+				}
+
+				throw error;
+			}
+
+			break;
+		}
+		case "delete": {
+			const [idArg] = rest;
+
+			if (!idArg) {
+				console.error("Error: task id is required");
+				console.error("Usage: task-cli delete <id>");
+				process.exit(1);
+			}
+
+			const id = parseTaskId(idArg);
+			if (id === null) {
+				console.error("Error: task id must be a positive integer");
+				process.exit(1);
+			}
+
+			try {
+				const task = await deleteTask(id);
+				console.log(`Task deleted: ${task.id}`);
 			} catch (error) {
 				if (error instanceof TaskNotFoundError) {
 					console.error(`Error: ${error.message}`);
