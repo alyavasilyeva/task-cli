@@ -7,7 +7,7 @@ export function createTask(overrides: Partial<Task> = {}): Task {
 	const timestamp = faker.date.recent({ days: 30 }).toISOString();
 
 	return taskSchema.parse({
-		id: faker.string.uuid(),
+		id: faker.number.int({ min: 1, max: 10_000 }),
 		description: faker.lorem.sentence(),
 		status: faker.helpers.arrayElement(taskStatuses),
 		createdAt: timestamp,

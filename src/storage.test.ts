@@ -3,19 +3,34 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { faker } from "@faker-js/faker";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { getTasksFilePath, loadTasks, saveTasks } from "./storage.js";
+import {
+	getNextTaskId,
+	getTasksFilePath,
+	loadTasks,
+	saveTasks,
+} from "./storage.js";
 import { createTask } from "./test/create-task.js";
 import type { Task } from "./types.js";
 
 faker.seed(42);
 
-const firstTask = createTask();
+const firstTask = createTask({ id: 1 });
 
 describe("getTasksFilePath", () => {
 	it("joins the tasks filename with the provided directory", () => {
 		expect(getTasksFilePath("/tmp/project")).toBe(
 			path.join("/tmp/project", "tasks.json"),
 		);
+	});
+});
+
+describe("getNextTaskId", () => {
+	it("returns 1 for an empty task list", () => {
+		expect(getNextTaskId([])).toBe(1);
+	});
+
+	it("returns one greater than the highest existing id", () => {
+		expect(getNextTaskId([firstTask, createTask({ id: 2 })])).toBe(3);
 	});
 });
 
@@ -47,7 +62,7 @@ describe("loadTasks", () => {
 		const filePath = path.join(tempDir, "invalid-tasks.json");
 		await writeFile(
 			filePath,
-			JSON.stringify([{ id: "not-a-uuid", description: "" }]),
+			JSON.stringify([{ id: 0, description: "" }]),
 			"utf-8",
 		);
 
@@ -76,7 +91,7 @@ describe("saveTasks", () => {
 
 	it("persists multiple tasks that can be loaded back", async () => {
 		const filePath = path.join(tempDir, "multiple-tasks.json");
-		const secondTask: Task = createTask({ status: "in-progress" });
+		const secondTask: Task = createTask({ id: 2, status: "in-progress" });
 
 		await saveTasks(filePath, [firstTask, secondTask]);
 

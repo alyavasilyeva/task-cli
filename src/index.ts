@@ -1,7 +1,18 @@
 #!/usr/bin/env node
 
 import { addTask } from "./commands/add.js";
+import { TaskNotFoundError, updateTask } from "./commands/update.js";
 import { getPositionalArgs } from "./parse-args.js";
+
+function parseTaskId(idArg: string): number | null {
+	const id = Number.parseInt(idArg, 10);
+
+	if (!Number.isInteger(id) || id <= 0) {
+		return null;
+	}
+
+	return id;
+}
 
 async function main(): Promise<void> {
 	const [command, ...rest] = getPositionalArgs(process.argv);
@@ -17,6 +28,36 @@ async function main(): Promise<void> {
 
 			const task = await addTask(description);
 			console.log(`Task created: ${task.id}`);
+			break;
+		}
+		case "update": {
+			const [idArg, ...descriptionParts] = rest;
+			const description = descriptionParts.join(" ").trim();
+
+			if (!idArg || !description) {
+				console.error("Error: task id and description are required");
+				console.error('Usage: task-cli update <id> "new description"');
+				process.exit(1);
+			}
+
+			const id = parseTaskId(idArg);
+			if (id === null) {
+				console.error("Error: task id must be a positive integer");
+				process.exit(1);
+			}
+
+			try {
+				const task = await updateTask(id, description);
+				console.log(`Task updated: ${task.id}`);
+			} catch (error) {
+				if (error instanceof TaskNotFoundError) {
+					console.error(`Error: ${error.message}`);
+					process.exit(1);
+				}
+
+				throw error;
+			}
+
 			break;
 		}
 		default: {

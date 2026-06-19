@@ -1,5 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { getTasksFilePath, loadTasks, saveTasks } from "../storage.js";
+import {
+	getNextTaskId,
+	getTasksFilePath,
+	loadTasks,
+	saveTasks,
+} from "../storage.js";
 import { type Task, taskSchema } from "../types.js";
 
 export async function addTask(description: string): Promise<Task> {
@@ -8,7 +12,7 @@ export async function addTask(description: string): Promise<Task> {
 	const now = new Date().toISOString();
 
 	const task = taskSchema.parse({
-		id: randomUUID(),
+		id: getNextTaskId(tasks),
 		description,
 		status: "todo",
 		createdAt: now,

@@ -9,6 +9,14 @@ export function getTasksFilePath(cwd = process.cwd()): string {
 	return path.join(cwd, TASKS_FILENAME);
 }
 
+export function getNextTaskId(tasks: readonly Task[]): number {
+	if (tasks.length === 0) {
+		return 1;
+	}
+
+	return Math.max(...tasks.map((task) => task.id)) + 1;
+}
+
 export async function loadTasks(filePath: string): Promise<Task[]> {
 	try {
 		await access(filePath);

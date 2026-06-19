@@ -3,7 +3,7 @@ import { z } from "zod";
 export const taskStatusSchema = z.enum(["todo", "in-progress", "done"]);
 
 export const taskSchema = z.object({
-	id: z.uuid(),
+	id: z.coerce.number().int().positive(),
 	description: z.string().min(1),
 	status: taskStatusSchema,
 	createdAt: z.iso.datetime(),
