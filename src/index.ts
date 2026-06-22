@@ -2,6 +2,7 @@
 
 import { addTask } from "./commands/add.js";
 import { deleteTask } from "./commands/delete.js";
+import { listTasks } from "./commands/list.js";
 import { TaskNotFoundError, updateTask } from "./commands/update.js";
 import { getPositionalArgs } from "./parse-args.js";
 import { getTasksFilePath } from "./storage.js";
@@ -88,6 +89,20 @@ async function main(): Promise<void> {
 				}
 
 				throw error;
+			}
+
+			break;
+		}
+		case "list": {
+			const tasks = await listTasks(tasksFilePath);
+
+			if (tasks.length === 0) {
+				console.log("No tasks found.");
+				break;
+			}
+
+			for (const task of tasks) {
+				console.log(`${task.id}. ${task.description} [${task.status}]`);
 			}
 
 			break;
