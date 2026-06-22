@@ -1,4 +1,4 @@
-import { getTasksFilePath, loadTasks, saveTasks } from "../storage.js";
+import { loadTasks, saveTasks } from "../storage.js";
 import { type Task, taskSchema } from "../types.js";
 
 export class TaskNotFoundError extends Error {
@@ -9,10 +9,10 @@ export class TaskNotFoundError extends Error {
 }
 
 export async function updateTask(
+	filePath: string,
 	id: number,
 	description: string,
 ): Promise<Task> {
-	const filePath = getTasksFilePath();
 	const tasks = await loadTasks(filePath);
 	const taskIndex = tasks.findIndex((task) => task.id === id);
 

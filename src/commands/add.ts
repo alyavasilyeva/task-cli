@@ -1,13 +1,10 @@
-import {
-	getNextTaskId,
-	getTasksFilePath,
-	loadTasks,
-	saveTasks,
-} from "../storage.js";
+import { getNextTaskId, loadTasks, saveTasks } from "../storage.js";
 import { type Task, taskSchema } from "../types.js";
 
-export async function addTask(description: string): Promise<Task> {
-	const filePath = getTasksFilePath();
+export async function addTask(
+	filePath: string,
+	description: string,
+): Promise<Task> {
 	const tasks = await loadTasks(filePath);
 	const now = new Date().toISOString();
 

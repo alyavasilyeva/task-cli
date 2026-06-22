@@ -4,6 +4,7 @@ import { addTask } from "./commands/add.js";
 import { deleteTask } from "./commands/delete.js";
 import { TaskNotFoundError, updateTask } from "./commands/update.js";
 import { getPositionalArgs } from "./parse-args.js";
+import { getTasksFilePath } from "./storage.js";
 
 function parseTaskId(idArg: string): number | null {
 	const id = Number.parseInt(idArg, 10);
@@ -17,6 +18,7 @@ function parseTaskId(idArg: string): number | null {
 
 async function main(): Promise<void> {
 	const [command, ...rest] = getPositionalArgs(process.argv);
+	const tasksFilePath = getTasksFilePath();
 
 	switch (command) {
 		case "add": {
@@ -27,7 +29,7 @@ async function main(): Promise<void> {
 				process.exit(1);
 			}
 
-			const task = await addTask(description);
+			const task = await addTask(tasksFilePath, description);
 			console.log(`Task created: ${task.id}`);
 			break;
 		}
@@ -48,7 +50,7 @@ async function main(): Promise<void> {
 			}
 
 			try {
-				const task = await updateTask(id, description);
+				const task = await updateTask(tasksFilePath, id, description);
 				console.log(`Task updated: ${task.id}`);
 			} catch (error) {
 				if (error instanceof TaskNotFoundError) {
@@ -77,7 +79,7 @@ async function main(): Promise<void> {
 			}
 
 			try {
-				const task = await deleteTask(id);
+				const task = await deleteTask(tasksFilePath, id);
 				console.log(`Task deleted: ${task.id}`);
 			} catch (error) {
 				if (error instanceof TaskNotFoundError) {
