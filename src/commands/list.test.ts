@@ -5,9 +5,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createTask } from "../test/create-task.js";
 import { addTask } from "./add.js";
 import {
-	applyTaskSelection,
+	applyListAction,
 	formatTaskLabel,
+	getAffectedTasks,
 	listTasksInteractive,
+	printListActionResult,
 	printTasks,
 } from "./list.js";
 
@@ -23,20 +25,101 @@ describe("formatTaskLabel", () => {
 	});
 });
 
-describe("applyTaskSelection", () => {
-	it("marks selected tasks as done and unselected done tasks as todo", () => {
-		const todoTask = createTask({ id: 1, status: "todo" });
-		const doneTask = createTask({ id: 2, status: "done" });
-		const inProgressTask = createTask({ id: 3, status: "in-progress" });
+describe("applyListAction", () => {
+	const tasks = [
+		createTask({ id: 1, description: "First", status: "todo" }),
+		createTask({ id: 2, description: "Second", status: "todo" }),
+		createTask({ id: 3, description: "Third", status: "done" }),
+	];
 
-		const updated = applyTaskSelection(
-			[todoTask, doneTask, inProgressTask],
-			[1, 3],
+	it("returns null when cancelled", () => {
+		expect(applyListAction(tasks, [1], "cancel")).toBeNull();
+	});
+
+	it("deletes selected tasks", () => {
+		const updated = applyListAction(tasks, [1, 3], "delete");
+
+		expect(updated?.map((task) => task.id)).toEqual([2]);
+	});
+
+	it("marks selected tasks as done", () => {
+		const updated = applyListAction(tasks, [1, 2], "done");
+
+		expect(updated?.[0]?.status).toBe("done");
+		expect(updated?.[1]?.status).toBe("done");
+		expect(updated?.[2]?.status).toBe("done");
+	});
+
+	it("marks selected tasks as in progress", () => {
+		const updated = applyListAction(tasks, [2, 3], "in-progress");
+
+		expect(updated?.[0]?.status).toBe("todo");
+		expect(updated?.[1]?.status).toBe("in-progress");
+		expect(updated?.[2]?.status).toBe("in-progress");
+	});
+});
+
+describe("getAffectedTasks", () => {
+	const tasks = [
+		createTask({ id: 1, description: "First", status: "todo" }),
+		createTask({ id: 2, description: "Second", status: "done" }),
+	];
+
+	it("returns selected tasks for delete", () => {
+		expect(getAffectedTasks(tasks, [1, 2], "delete").map((t) => t.id)).toEqual([
+			1, 2,
+		]);
+	});
+
+	it("returns only tasks that change status for done", () => {
+		expect(getAffectedTasks(tasks, [1, 2], "done").map((t) => t.id)).toEqual([
+			1,
+		]);
+	});
+
+	it("returns only tasks that change status for in progress", () => {
+		expect(
+			getAffectedTasks(tasks, [1, 2], "in-progress").map((t) => t.id),
+		).toEqual([1, 2]);
+	});
+});
+
+describe("printListActionResult", () => {
+	const tasks = [
+		createTask({ id: 1, description: "First", status: "todo" }),
+		createTask({ id: 2, description: "Second", status: "todo" }),
+	];
+
+	it("prints deleted tasks", () => {
+		const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+		printListActionResult(tasks, [1], "delete");
+
+		expect(log).toHaveBeenCalledWith("Tasks deleted: 1. First [todo]");
+		log.mockRestore();
+	});
+
+	it("prints tasks marked as done", () => {
+		const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+		printListActionResult(tasks, [1, 2], "done");
+
+		expect(log).toHaveBeenCalledWith(
+			"Tasks marked as done: 1. First [todo], 2. Second [todo]",
 		);
+		log.mockRestore();
+	});
 
-		expect(updated[0]?.status).toBe("done");
-		expect(updated[1]?.status).toBe("todo");
-		expect(updated[2]?.status).toBe("done");
+	it("prints nothing when no tasks were affected", () => {
+		const doneTasks = [
+			createTask({ id: 1, description: "First", status: "done" }),
+		];
+		const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+		printListActionResult(doneTasks, [1], "done");
+
+		expect(log).not.toHaveBeenCalled();
+		log.mockRestore();
 	});
 });
 
@@ -77,30 +160,69 @@ describe("listTasksInteractive", () => {
 	});
 
 	describe("interactive mode", () => {
-		let tempDir: string;
-		let tasksFilePath: string;
+		describe("applying an action", () => {
+			let tempDir: string;
+			let tasksFilePath: string;
 
-		beforeAll(async () => {
-			tempDir = await mkdtemp(path.join(tmpdir(), "task-cli-list-test-"));
-			tasksFilePath = path.join(tempDir, "tasks.json");
-		});
-
-		afterAll(async () => {
-			await rm(tempDir, { recursive: true, force: true });
-		});
-
-		it("saves task status changes after interactive selection", async () => {
-			const task = await addTask(tasksFilePath, "Buy groceries");
-			const promptCheckbox = vi.fn().mockResolvedValue([task.id]);
-
-			await listTasksInteractive(tasksFilePath, {
-				isInteractive: true,
-				promptCheckbox,
+			beforeAll(async () => {
+				tempDir = await mkdtemp(path.join(tmpdir(), "task-cli-list-test-"));
+				tasksFilePath = path.join(tempDir, "tasks.json");
 			});
 
-			expect(promptCheckbox).toHaveBeenCalledOnce();
-			const saved = JSON.parse(await readFile(tasksFilePath, "utf-8"));
-			expect(saved[0]?.status).toBe("done");
+			afterAll(async () => {
+				await rm(tempDir, { recursive: true, force: true });
+			});
+
+			it("applies the chosen action to selected tasks", async () => {
+				const task = await addTask(tasksFilePath, "Buy groceries");
+				const promptCheckbox = vi.fn().mockResolvedValue([task.id]);
+				const promptSelect = vi.fn().mockResolvedValue("done");
+				const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+				await listTasksInteractive(tasksFilePath, {
+					isInteractive: true,
+					promptCheckbox,
+					promptSelect,
+				});
+
+				expect(promptCheckbox).toHaveBeenCalledOnce();
+				expect(promptSelect).toHaveBeenCalledOnce();
+				const saved = JSON.parse(await readFile(tasksFilePath, "utf-8"));
+				expect(saved[0]?.status).toBe("done");
+				expect(log).toHaveBeenCalledWith(
+					`Tasks marked as done: ${formatTaskLabel(task)}`,
+				);
+				log.mockRestore();
+			});
+		});
+
+		describe("cancelling an action", () => {
+			let tempDir: string;
+			let tasksFilePath: string;
+
+			beforeAll(async () => {
+				tempDir = await mkdtemp(path.join(tmpdir(), "task-cli-list-test-"));
+				tasksFilePath = path.join(tempDir, "tasks.json");
+			});
+
+			afterAll(async () => {
+				await rm(tempDir, { recursive: true, force: true });
+			});
+
+			it("does not save when the action is cancel", async () => {
+				const task = await addTask(tasksFilePath, "Walk the dog");
+				const promptCheckbox = vi.fn().mockResolvedValue([task.id]);
+				const promptSelect = vi.fn().mockResolvedValue("cancel");
+
+				await listTasksInteractive(tasksFilePath, {
+					isInteractive: true,
+					promptCheckbox,
+					promptSelect,
+				});
+
+				const saved = JSON.parse(await readFile(tasksFilePath, "utf-8"));
+				expect(saved[0]?.status).toBe("todo");
+			});
 		});
 	});
 });
