@@ -185,13 +185,16 @@ async function main(): Promise<void> {
 			break;
 		}
 		default: {
-			if (!command) {
-				console.error("Usage: task-cli <command> [args]");
-				process.exit(1);
-			}
-
-			console.error(`Unknown command: ${command}`);
-			process.exit(1);
+			console.log(`Usage: task-cli <command> [args]
+Commands:
+  add <description>:              Add a new task
+  update <id> <description>:      Update a task
+  delete <id>:                    Delete a task
+  list [done|in-progress|todo]:   List tasks by status
+  mark-done <id>:                 Mark a task as done
+  mark-in-progress <id>:          Mark a task as in progress
+`);
+			process.exit(0);
 		}
 	}
 }
