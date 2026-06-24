@@ -5,7 +5,8 @@ import { deleteTask } from "./commands/delete.js";
 import { listTasks } from "./commands/list.js";
 import { markDone } from "./commands/mark-done.js";
 import { markInProgress } from "./commands/mark-in-progress.js";
-import { TaskNotFoundError, updateTask } from "./commands/update.js";
+import { updateTask } from "./commands/update.js";
+import { TaskNotFoundError } from "./errors.js";
 import { getPositionalArgs } from "./parse-args.js";
 import { getTasksFilePath } from "./storage.js";
 

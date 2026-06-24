@@ -1,6 +1,6 @@
-import { loadTasks, saveTasks } from "../storage.js";
-import type { Task } from "../types.js";
-import { TaskNotFoundError } from "./update.js";
+import { TaskNotFoundError } from "~/errors.js";
+import { loadTasks, saveTasks } from "~/storage.js";
+import type { Task } from "~/types.js";
 
 export async function deleteTask(filePath: string, id: number): Promise<Task> {
 	const tasks = await loadTasks(filePath);

@@ -2,9 +2,9 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { TaskNotFoundError } from "~/errors.js";
 import { addTask } from "./add.js";
 import { markDone } from "./mark-done.js";
-import { TaskNotFoundError } from "./update.js";
 
 describe("markDone", () => {
 	let tempDir: string;

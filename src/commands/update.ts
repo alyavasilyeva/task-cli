@@ -1,12 +1,6 @@
-import { loadTasks, saveTasks } from "../storage.js";
-import { type Task, taskSchema } from "../types.js";
-
-export class TaskNotFoundError extends Error {
-	constructor(id: number) {
-		super(`Task not found: ${id}`);
-		this.name = "TaskNotFoundError";
-	}
-}
+import { TaskNotFoundError } from "~/errors.js";
+import { loadTasks, saveTasks } from "~/storage.js";
+import { type Task, taskSchema } from "~/types.js";
 
 export async function updateTask(
 	filePath: string,

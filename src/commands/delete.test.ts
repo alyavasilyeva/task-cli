@@ -2,10 +2,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { loadTasks } from "../storage.js";
+import { TaskNotFoundError } from "~/errors.js";
+import { loadTasks } from "~/storage.js";
 import { addTask } from "./add.js";
 import { deleteTask } from "./delete.js";
-import { TaskNotFoundError } from "./update.js";
 
 describe("deleteTask", () => {
 	let tempDir: string;
