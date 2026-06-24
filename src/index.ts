@@ -4,6 +4,7 @@ import { addTask } from "./commands/add.js";
 import { deleteTask } from "./commands/delete.js";
 import { listTasks } from "./commands/list.js";
 import { markDone } from "./commands/mark-done.js";
+import { markInProgress } from "./commands/mark-in-progress.js";
 import { TaskNotFoundError, updateTask } from "./commands/update.js";
 import { getPositionalArgs } from "./parse-args.js";
 import { getTasksFilePath } from "./storage.js";
@@ -126,6 +127,35 @@ async function main(): Promise<void> {
 			try {
 				const task = await markDone(tasksFilePath, id);
 				console.log(`Task marked as done: ${task.id}`);
+			} catch (error) {
+				if (error instanceof TaskNotFoundError) {
+					console.error(`Error: ${error.message}`);
+					process.exit(1);
+				}
+
+				throw error;
+			}
+
+			break;
+		}
+		case "mark-in-progress": {
+			const [idArg] = rest;
+
+			if (!idArg) {
+				console.error("Error: task id is required");
+				console.error("Usage: task-cli mark-in-progress <id>");
+				process.exit(1);
+			}
+
+			const id = parseTaskId(idArg);
+			if (id === null) {
+				console.error("Error: task id must be a positive integer");
+				process.exit(1);
+			}
+
+			try {
+				const task = await markInProgress(tasksFilePath, id);
+				console.log(`Task marked as in progress: ${task.id}`);
 			} catch (error) {
 				if (error instanceof TaskNotFoundError) {
 					console.error(`Error: ${error.message}`);
