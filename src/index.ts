@@ -96,7 +96,24 @@ async function main(): Promise<void> {
 			break;
 		}
 		case "list": {
-			const tasks = await listTasks(tasksFilePath);
+			let tasks = await listTasks(tasksFilePath);
+			const [status] = rest;
+
+			if (status) {
+				if (
+					status !== "todo" &&
+					status !== "in-progress" &&
+					status !== "done"
+				) {
+					console.error("Error: invalid status");
+					console.error("Usage: task-cli list [done|in-progress|todo]");
+					process.exit(1);
+				}
+			}
+
+			if (status) {
+				tasks = tasks.filter((task) => task.status === status);
+			}
 
 			if (tasks.length === 0) {
 				console.log("No tasks found.");
