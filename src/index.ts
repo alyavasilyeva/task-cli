@@ -3,6 +3,7 @@
 import { addTask } from "./commands/add.js";
 import { deleteTask } from "./commands/delete.js";
 import { listTasks } from "./commands/list.js";
+import { markDone } from "./commands/mark-done.js";
 import { TaskNotFoundError, updateTask } from "./commands/update.js";
 import { getPositionalArgs } from "./parse-args.js";
 import { getTasksFilePath } from "./storage.js";
@@ -103,6 +104,35 @@ async function main(): Promise<void> {
 
 			for (const task of tasks) {
 				console.log(`${task.id}. ${task.description} [${task.status}]`);
+			}
+
+			break;
+		}
+		case "mark-done": {
+			const [idArg] = rest;
+
+			if (!idArg) {
+				console.error("Error: task id is required");
+				console.error("Usage: task-cli mark-done <id>");
+				process.exit(1);
+			}
+
+			const id = parseTaskId(idArg);
+			if (id === null) {
+				console.error("Error: task id must be a positive integer");
+				process.exit(1);
+			}
+
+			try {
+				const task = await markDone(tasksFilePath, id);
+				console.log(`Task marked as done: ${task.id}`);
+			} catch (error) {
+				if (error instanceof TaskNotFoundError) {
+					console.error(`Error: ${error.message}`);
+					process.exit(1);
+				}
+
+				throw error;
 			}
 
 			break;
